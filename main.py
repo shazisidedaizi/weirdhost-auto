@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*- 
 """
 weirdhost-auto - main.py
 改动：优先使用 cookie 登录（REMEMBER_WEB_COOKIE），cookie 失效再使用邮箱+密码登录。
@@ -106,7 +106,7 @@ async def add_server_time():
             # ------------------ 如果提供了 cookie，优先尝试 cookie 登录 ------------------
             if remember_cookie_value:
                 try:
-                    # 若 cookie 名称可能带 hash 后缀（remember_web_xxx），尝试直接用环境变量的 name，
+                    # 若 cookie 名称可能带 hash 后缀（remember_web_xxx），尝试直接用环境变量的 name， 
                     # 如果没设置特定 name，使用默认 remember_web
                     cookie_to_add = {
                         "name": remember_cookie_name,
@@ -305,11 +305,12 @@ async def add_server_time():
             try:
                 # 等待页面更新
                 await page.wait_for_load_state("networkidle", timeout=30000)
-                # 使用 JavaScript 正则匹配页面文本中的 "유통기한" 后跟的时间信息
+                # 使用 JavaScript 正则匹配页面文本中的 "유통기한" 后跟的日期格式 YYYY-MM-DD
                 expiry_time = await page.evaluate("""
                     () => {
                         const bodyText = document.body.innerText;
-                        const match = bodyText.match(/유통기한\\s*([\\w\\s\\-\\:\\.\\,]+?)(?=\\n|$|\\s{2,})/);
+                        console.log("页面内容:", bodyText);  // 输出页面内容，方便调试
+                        const match = bodyText.match(/유통기한\\s*(\\d{4}-\\d{2}-\\d{2})(?=\\n|$|\\s{2,})/);
                         return match ? match[1].trim() : 'Not found';
                     }
                 """)
