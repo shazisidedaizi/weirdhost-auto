@@ -1,7 +1,7 @@
 name: weirdhost-auto-add-time
 on:
   schedule:
-    - cron: '0 5 * * *'  # 每天 UTC 1 点执行，可根据需要调整
+    - cron: '0 1 * * *'  # 每天 UTC 1 点执行，可根据需要调整
   workflow_dispatch:      # 支持手动触发
 
 jobs:
