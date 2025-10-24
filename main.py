@@ -60,8 +60,8 @@ async def add_server_time():
         page = await context.new_page()
 
         # 设置全局 timeout
-        page.set_default_timeout(120000)
-        page.set_default_navigation_timeout(120000)
+        page.set_default_timeout(90000)
+        page.set_default_navigation_timeout(90000)
 
         try:
             # ------------------ 登录 ------------------
@@ -81,8 +81,8 @@ async def add_server_time():
                 return
 
             # 填写邮箱和密码
-            await inputs[0].fill(email, timeout=60000)
-            await inputs[1].fill(password, timeout=60000)
+            await inputs[0].fill(email, timeout=120000)
+            await inputs[1].fill(password, timeout=120000)
 
             # 勾选协议 checkbox
             try:
@@ -92,19 +92,20 @@ async def add_server_time():
             except Exception:
                 print("⚠️ 协议勾选框未找到或无法勾选，继续登录")
 
-            # 点击登录按钮
+            # 点击登录按钮（韩文 "로그인"）
             login_button = page.locator('button:has-text("로그인")')
-if await login_button.count() == 0:
-    screenshot_path = "login_button_not_found.png"
-    await page.screenshot(path=screenshot_path, full_page=True)
-    msg = "❌ 未找到 로그인 登录按钮"
-    print(msg)
-    await tg_notify_photo(screenshot_path, caption=msg)
-    await tg_notify(msg)
-    return
+            if await login_button.count() == 0:
+                screenshot_path = "login_button_not_found.png"
+                await page.screenshot(path=screenshot_path, full_page=True)
+                msg = "❌ 未找到 로그인 登录按钮"
+                print(msg)
+                await tg_notify_photo(screenshot_path, caption=msg)
+                await tg_notify(msg)
+                return
 
-await login_button.nth(0).click()
-await page.wait_for_timeout(30000)
+            await login_button.nth(0).click()
+            await page.wait_for_timeout(3000)
+
             # 等待登录成功
             try:
                 await page.wait_for_url("**/server/**", timeout=60000)
@@ -132,7 +133,7 @@ await page.wait_for_timeout(30000)
                 return
 
             await add_button.nth(0).click()
-            await page.wait_for_timeout(30000)
+            await page.wait_for_timeout(3000)
 
             msg = f"✅ 续期操作已完成：{server_url}"
             print(msg)
