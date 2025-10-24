@@ -4,6 +4,7 @@
 weirdhost-auto - main.py
 改动：优先使用 cookie 登录（REMEMBER_WEB_COOKIE），cookie 失效再使用邮箱+密码登录。
 保留：Telegram 通知、异常截图上传、超时延长、按索引填写输入框、勾选 checkbox、点击韩文 로그인 登录按钮、点击 시간 추가 续期。
+新增：续期后查询到期时间（基于页面文本匹配 "유통기한"），并在通知中包含到期时间。
 环境变量：
   - REMEMBER_WEB_COOKIE (可选) : cookie 的 value
   - REMEMBER_WEB_COOKIE_NAME (可选) : cookie 名称，默认 'remember_web'
@@ -14,6 +15,7 @@ weirdhost-auto - main.py
 import os
 import asyncio
 import aiohttp
+import re
 from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeoutError
 
 DEFAULT_SERVER_URL = "https://hub.weirdhost.xyz/server/d341874c"
@@ -278,7 +280,7 @@ async def add_server_time():
                 screenshot_path = "no_button_found.png"
                 try:
                     await page.screenshot(path=screenshot_path, full_page=True)
-                    await tg_notify_photo(screenshot_path, caption="❌ 未找到 '시간 추가' 按钮")
+                    await tg_notify_photo(screenshot_path, caption="❠ 未找到 '시간 추가' 按钮")
                 except Exception:
                     pass
                 await tg_notify("❌ 未找到 '시간 추가' 按钮，续期失败")
@@ -288,8 +290,6 @@ async def add_server_time():
             try:
                 await add_button.nth(0).click()
                 await page.wait_for_timeout(3000)
-                await tg_notify(f"✅ 续期操作已完成：{server_url}")
-                print(f"✅ 续期操作已完成：{server_url}")
             except Exception as e:
                 screenshot_path = "click_add_time_failed.png"
                 try:
@@ -299,6 +299,30 @@ async def add_server_time():
                     pass
                 await tg_notify(f"❌ 点击续期按钮失败: {e}")
                 return
+
+            # ------------------ 查询到期时间 ------------------
+            expiry_time = "Unknown"
+            try:
+                # 等待页面更新
+                await page.wait_for_load_state("networkidle", timeout=10000)
+                # 使用 JavaScript 正则匹配页面文本中的 "유통기한" 后跟的时间信息
+                expiry_time = await page.evaluate("""
+                    () => {
+                        const bodyText = document.body.innerText;
+                        const match = bodyText.match(/유통기한\\s*([\\w\\s\\-\\:\\.\\,]+?)(?=\\n|$|\\s{2,})/);
+                        return match ? match[1].trim() : 'Not found';
+                    }
+                """)
+                if expiry_time == 'Not found':
+                    expiry_time = "Unknown"
+                print(f"📅 查询到的到期时间: {expiry_time}")
+            except Exception as e:
+                print(f"⚠️ 查询到期时间失败: {e}，使用默认值 Unknown")
+
+            # ------------------ 输出续费成功通知 ------------------
+            success_msg = f"✅ 续期操作已完成，到期时间：{expiry_time}，服务器：{server_url}"
+            await tg_notify(success_msg)
+            print(success_msg)
 
         except Exception as e:
             # 捕获整个流程中未处理的异常，截图并通知
