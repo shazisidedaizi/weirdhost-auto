@@ -62,7 +62,7 @@ async def add_server_time():
         try:
             # 1) 打开登录页
             login_url = "https://hub.weirdhost.xyz/auth/login"
-            await page.goto(login_url, timeout=60000)
+            await page.goto(login_url, timeout=120000)
 
             # 2) 填写表单并提交
             await page.fill('input[name="email"]', email)
@@ -71,12 +71,12 @@ async def add_server_time():
 
             # 3) 等待登录跳转或页面稳定
             try:
-                await page.wait_for_url("**/server/**", timeout=20000)
+                await page.wait_for_url("**/server/**", timeout=60000)
             except PlaywrightTimeoutError:
-                await page.wait_for_load_state("networkidle", timeout=10000)
+                await page.wait_for_load_state("networkidle", timeout=60000)
 
             # 4) 打开目标服务器页面
-            await page.goto(server_url, timeout=30000)
+            await page.goto(server_url, timeout=60000)
             await page.wait_for_load_state("networkidle")
 
             # 5) 查找“시간 추가”按钮
@@ -97,7 +97,7 @@ async def add_server_time():
 
             # 6) 点击按钮
             await add_button.nth(0).click()
-            await page.wait_for_timeout(3000)
+            await page.wait_for_timeout(30000)
 
             msg = f"✅ 续期操作已完成：{server_url}"
             print(msg)
