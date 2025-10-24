@@ -304,7 +304,7 @@ async def add_server_time():
             expiry_time = "Unknown"
             try:
                 # 等待页面更新
-                await page.wait_for_load_state("networkidle", timeout=10000)
+                await page.wait_for_load_state("networkidle", timeout=30000)
                 # 使用 JavaScript 正则匹配页面文本中的 "유통기한" 后跟的时间信息
                 expiry_time = await page.evaluate("""
                     () => {
