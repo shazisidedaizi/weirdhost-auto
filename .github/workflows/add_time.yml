@@ -27,13 +27,12 @@ jobs:
       # 4️⃣ 运行 weirdhost-auto 脚本
       - name: Run weirdhost-auto
         env:
-          # 登录 WeirdHost
+          # WeirdHost 登录信息
           PTERODACTYL_EMAIL: ${{ secrets.PTERODACTYL_EMAIL }}
           PTERODACTYL_PASSWORD: ${{ secrets.PTERODACTYL_PASSWORD }}
-          SERVER_URL: ${{ secrets.SERVER_URL }}          # 可选，默认脚本已设默认值
-          # Telegram 通知
+          SERVER_URL: ${{ secrets.SERVER_URL }}  # 可选，默认已设
+          # Telegram Bot 信息
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
         run: |
           python main.py
-
