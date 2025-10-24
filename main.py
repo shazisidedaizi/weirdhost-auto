@@ -59,27 +59,53 @@ async def add_server_time():
         context = await browser.new_context()
         page = await context.new_page()
 
+        # 设置全局 timeout
+        page.set_default_timeout(120000)
+        page.set_default_navigation_timeout(120000)
+
         try:
-            # 1) 打开登录页
+            # ------------------ 登录 ------------------
             login_url = "https://hub.weirdhost.xyz/auth/login"
             await page.goto(login_url, timeout=120000)
 
-            # 2) 填写表单并提交
-            await page.fill('input[name="email"]', email)
-            await page.fill('input[name="password"]', password)
-            await page.click('button[type="submit"]')
+            await page.wait_for_selector('input', timeout=60000)
+            inputs = await page.query_selector_all('input')
 
-            # 3) 等待登录跳转或页面稳定
+            if len(inputs) < 2:
+                screenshot_path = "login_inputs_not_found.png"
+                await page.screenshot(path=screenshot_path, full_page=True)
+                msg = "❌ 登录页面输入框不足两个，无法填写邮箱和密码"
+                print(msg)
+                await tg_notify_photo(screenshot_path, caption=msg)
+                await tg_notify(msg)
+                return
+
+            # 填写邮箱和密码
+            await inputs[0].fill(email, timeout=120000)
+            await inputs[1].fill(password, timeout=120000)
+
+            # 勾选协议 checkbox
+            try:
+                checkbox = await page.query_selector('input[type="checkbox"]')
+                if checkbox:
+                    await checkbox.check()
+            except Exception:
+                print("⚠️ 协议勾选框未找到或无法勾选，继续登录")
+
+            # 点击登录按钮
+            await page.click('button[type="submit"]', timeout=120000)
+
+            # 等待登录成功
             try:
                 await page.wait_for_url("**/server/**", timeout=60000)
             except PlaywrightTimeoutError:
-                await page.wait_for_load_state("networkidle", timeout=60000)
+                await page.wait_for_load_state("networkidle", timeout=30000)
 
-            # 4) 打开目标服务器页面
-            await page.goto(server_url, timeout=60000)
-            await page.wait_for_load_state("networkidle")
+            # ------------------ 打开服务器页面 ------------------
+            await page.goto(server_url, timeout=90000)
+            await page.wait_for_load_state("networkidle", timeout=30000)
 
-            # 5) 查找“시간 추가”按钮
+            # ------------------ 点击续期按钮 ------------------
             add_button = page.locator('button:has-text("시간 추가")')
             if await add_button.count() == 0:
                 add_button = page.locator('text=시간 추가')
@@ -95,7 +121,6 @@ async def add_server_time():
                 await tg_notify(msg)
                 return
 
-            # 6) 点击按钮
             await add_button.nth(0).click()
             await page.wait_for_timeout(30000)
 
